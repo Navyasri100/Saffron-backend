@@ -1,9 +1,6 @@
 package com.restaurant.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -15,15 +12,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class OtpService {
 
     @Autowired
-    private JavaMailSender mailSender;
-
-    @Value("${spring.mail.username}")
-    private String fromEmail;
+    private EmailService emailService;
 
     private static class OtpEntry {
         String otp;
         String customerName;
-        String email; // store email for sending
+        String email;
         LocalDateTime expiry;
 
         OtpEntry(String otp, String customerName, String email) {
@@ -45,28 +39,7 @@ public class OtpService {
         String otp = String.format("%06d", random.nextInt(1_000_000));
         store.put(contact.toLowerCase().trim(), new OtpEntry(otp, customerName, customerEmail));
         System.out.println("OTP for [" + contact + "]: " + otp);
-        sendEmail(customerEmail, customerName, otp);
-    }
-
-    private void sendEmail(String toEmail, String customerName, String otp) {
-        try {
-            SimpleMailMessage msg = new SimpleMailMessage();
-            msg.setFrom(fromEmail);
-            msg.setTo(toEmail);
-            msg.setSubject("Saffron & Soul — Your Menu Access OTP");
-            msg.setText(
-                "Dear " + customerName + ",\n\n" +
-                "Your One-Time Password to access the Saffron & Soul menu is:\n\n" +
-                "        " + otp + "\n\n" +
-                "This OTP is valid for 10 minutes.\n\n" +
-                "Enjoy your dining experience!\n" +
-                "— Team Saffron & Soul"
-            );
-            mailSender.send(msg);
-            System.out.println("OTP email sent to: " + toEmail);
-        } catch (Exception e) {
-            System.err.println("Failed to send OTP email: " + e.getMessage());
-        }
+        emailService.sendOtp(customerEmail, customerName, otp);
     }
 
     public boolean verify(String contact, String otp) {

@@ -47,6 +47,17 @@ public class EmailService {
         send("saffronsoul2024@gmail.com", "New Reservation - " + r.getName(), body);
     }
 
+    public void sendOtp(String toEmail, String customerName, String otp) {
+        String body =
+            "Dear " + customerName + ",\n\n" +
+            "Your One-Time Password to access the Saffron & Soul menu is:\n\n" +
+            "        " + otp + "\n\n" +
+            "This OTP is valid for 10 minutes.\n\n" +
+            "Enjoy your dining experience!\n" +
+            "— Team Saffron & Soul";
+        send(toEmail, "Saffron & Soul — Your Menu Access OTP", body);
+    }
+
     private void send(String to, String subject, String text) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
