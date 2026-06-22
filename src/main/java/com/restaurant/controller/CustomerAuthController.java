@@ -42,7 +42,11 @@ public class CustomerAuthController {
         String customerName = res.getName();
         String customerEmail = res.getEmail();
 
-        otpService.generateAndSend(contact, customerName, customerEmail);
+        try {
+            otpService.generateAndSend(contact, customerName, customerEmail);
+        } catch (Exception e) {
+            System.err.println("OTP email failed: " + e.getMessage());
+        }
 
         return ResponseEntity.ok(Map.of(
             "success", true,
