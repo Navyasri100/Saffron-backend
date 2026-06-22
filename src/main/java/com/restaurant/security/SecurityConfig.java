@@ -49,6 +49,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/reservations/mine").permitAll()
                 .requestMatchers(HttpMethod.PUT,    "/api/reservations/*").permitAll()
                 .requestMatchers(HttpMethod.DELETE, "/api/reservations/*").permitAll()
+                .requestMatchers("/api/customer/request-otp").permitAll()
+                .requestMatchers("/api/customer/verify-otp").permitAll()
                 .requestMatchers("/api/customer/**").permitAll()
                 .requestMatchers("/api/orders/**").permitAll()
                 .requestMatchers(
@@ -57,7 +59,7 @@ public class SecurityConfig {
                         "/swagger-resources/**", "/webjars/**"
                 ).permitAll()
                 .requestMatchers("/api/admin/**").authenticated()
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
