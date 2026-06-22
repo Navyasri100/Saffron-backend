@@ -59,8 +59,7 @@ public class EmailService {
     }
 
     private void send(String to, String subject, String text) {
-        System.out.println("Resend key prefix: " + (apiKey != null ? apiKey.substring(0, Math.min(8, apiKey.length())) : "NULL"));
-        HttpHeaders headers = new HttpHeaders();
+HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(apiKey);
 
