@@ -16,6 +16,8 @@ C:\Claude\restaurant-app\restaurant-app\backend\src\main\java\com\restaurant\dto
 C:\Claude\restaurant-app\restaurant-app\backend\src\main\java\com\restaurant\service\MenuService.java
 C:\Claude\restaurant-app\restaurant-app\backend\src\main\java\com\restaurant\model\Order.java
 C:\Claude\restaurant-app\restaurant-app\backend\src\main\java\com\restaurant\service\OtpService.java
+C:\Claude\restaurant-app\restaurant-app\backend\src\main\java\com\restaurant\config\CorsGlobalFilter.java
+C:\Claude\restaurant-app\restaurant-app\backend\src\main\java\com\restaurant\config\ReservationCleanupScheduler.java
 C:\Claude\restaurant-app\restaurant-app\backend\src\main\java\com\restaurant\model\MenuItem.java
 C:\Claude\restaurant-app\restaurant-app\backend\src\main\java\com\restaurant\model\Admin.java
 C:\Claude\restaurant-app\restaurant-app\backend\src\main\java\com\restaurant\service\CloudinaryService.java

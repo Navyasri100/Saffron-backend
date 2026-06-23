@@ -4,10 +4,15 @@ import com.restaurant.model.Reservation;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class EmailService {
+
+    private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
 
     private final JavaMailSender mailSender;
 
@@ -20,6 +25,7 @@ public class EmailService {
         this.mailSender = mailSender;
     }
 
+    @Async
     public void sendReservationConfirmation(Reservation r) {
         String body =
             "Dear " + r.getName() + ",\n\n" +
@@ -34,6 +40,7 @@ public class EmailService {
         send(r.getEmail(), "Reservation Confirmed — Saffron & Soul", body);
     }
 
+    @Async
     public void sendOwnerNotification(Reservation r) {
         String body =
             "New reservation received:\n\n" +
@@ -48,6 +55,7 @@ public class EmailService {
         send(fromEmail, "New Reservation - " + r.getName(), body);
     }
 
+    @Async
     public void sendOtp(String toEmail, String customerName, String otp) {
         String body =
             "Dear " + customerName + ",\n\n" +
@@ -62,14 +70,22 @@ public class EmailService {
 
     private void send(String toEmail, String subject, String text) {
         try {
+            if (fromEmail == null || fromEmail.isEmpty()) {
+                logger.error("Email configuration missing: spring.mail.username not set");
+                return;
+            }
+
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(FROM_NAME + " <" + fromEmail + ">");
             message.setTo(toEmail);
             message.setSubject(subject);
             message.setText(text);
+
+            logger.info("Sending email to: {} with subject: {}", toEmail, subject);
             mailSender.send(message);
+            logger.info("Email sent successfully to: {}", toEmail);
         } catch (Exception e) {
-            System.err.println("Email send failed to " + toEmail + ": " + e.getMessage());
+            logger.error("Failed to send email to {}: {}", toEmail, e.getMessage(), e);
         }
     }
 }

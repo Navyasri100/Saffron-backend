@@ -1,5 +1,6 @@
 com\restaurant\controller\OrderController.class
 com\restaurant\service\ReservationService.class
+com\restaurant\config\CorsGlobalFilter.class
 com\restaurant\model\Reservation$ReservationStatus.class
 com\restaurant\security\SecurityConfig.class
 com\restaurant\controller\OrderController$OrderRequest.class
@@ -20,6 +21,7 @@ com\restaurant\model\Order.class
 com\restaurant\repository\ReservationRepository.class
 com\restaurant\model\MenuItem.class
 com\restaurant\model\Reservation.class
+com\restaurant\config\ReservationCleanupScheduler.class
 com\restaurant\controller\CategoryController.class
 com\restaurant\dto\LoginResponse.class
 com\restaurant\service\MenuService.class
