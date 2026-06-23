@@ -5,19 +5,19 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import java.util.List;
 import java.util.Map;
 
 @Service
 public class EmailService {
 
-    @Value("${resend.api-key}")
+    @Value("${brevo.api-key}")
     private String apiKey;
 
-    @Value("${resend.from}")
-    private String from;
-
     private final RestTemplate restTemplate = new RestTemplate();
-    private static final String RESEND_URL = "https://api.resend.com/emails";
+    private static final String BREVO_URL = "https://api.brevo.com/v3/smtp/email";
+    private static final String FROM_EMAIL = "saffronsoul2024@gmail.com";
+    private static final String FROM_NAME = "Saffron & Soul";
 
     public void sendReservationConfirmation(Reservation r) {
         String body =
@@ -30,7 +30,7 @@ public class EmailService {
             "— Team Saffron & Soul\n" +
             "saffronsoul2024@gmail.com";
 
-        send(r.getEmail(), "Reservation Confirmed — Saffron & Soul", body);
+        send(r.getEmail(), r.getName(), "Reservation Confirmed — Saffron & Soul", body);
     }
 
     public void sendOwnerNotification(Reservation r) {
@@ -44,7 +44,7 @@ public class EmailService {
             "Guests: " + r.getGuests() + "\n" +
             "Notes: " + r.getNotes();
 
-        send("saffronsoul2024@gmail.com", "New Reservation - " + r.getName(), body);
+        send("saffronsoul2024@gmail.com", "Owner", "New Reservation - " + r.getName(), body);
     }
 
     public void sendOtp(String toEmail, String customerName, String otp) {
@@ -55,22 +55,22 @@ public class EmailService {
             "This OTP is valid for 10 minutes.\n\n" +
             "Enjoy your dining experience!\n" +
             "— Team Saffron & Soul";
-        send(toEmail, "Saffron & Soul — Your Menu Access OTP", body);
+        send(toEmail, customerName, "Saffron & Soul — Your Menu Access OTP", body);
     }
 
-    private void send(String to, String subject, String text) {
-HttpHeaders headers = new HttpHeaders();
+    private void send(String toEmail, String toName, String subject, String text) {
+        HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(apiKey);
+        headers.set("api-key", apiKey);
 
         Map<String, Object> payload = Map.of(
-            "from", from,
-            "to", new String[]{to},
+            "sender", Map.of("name", FROM_NAME, "email", FROM_EMAIL),
+            "to", List.of(Map.of("email", toEmail, "name", toName)),
             "subject", subject,
-            "text", text
+            "textContent", text
         );
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
-        restTemplate.postForEntity(RESEND_URL, request, String.class);
+        restTemplate.postForEntity(BREVO_URL, request, String.class);
     }
 }
