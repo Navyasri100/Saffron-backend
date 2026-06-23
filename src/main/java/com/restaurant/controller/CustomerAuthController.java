@@ -3,88 +3,58 @@ package com.restaurant.controller;
 import com.restaurant.model.Reservation;
 import com.restaurant.repository.ReservationRepository;
 import com.restaurant.security.JwtUtil;
-import com.restaurant.service.OtpService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.time.LocalDate;
 import java.util.Map;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/customer")
 public class CustomerAuthController {
 
+    private static final Logger logger = LoggerFactory.getLogger(CustomerAuthController.class);
+
     @Autowired private ReservationRepository reservationRepository;
-    @Autowired private OtpService otpService;
     @Autowired private JwtUtil jwtUtil;
 
-    @PostMapping("/request-otp")
-    public ResponseEntity<?> requestOtp(@RequestBody Map<String, String> body) {
+    @PostMapping("/verify-access")
+    public ResponseEntity<?> verifyAccess(@RequestBody Map<String, String> body) {
         String contact = body.getOrDefault("contact", "").trim();
+
         if (contact.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Contact is required"));
+            return ResponseEntity.badRequest().body(Map.of("error", "Email or phone is required"));
         }
 
-        // Past reservations are deleted on startup, so any match here is current/upcoming
+        logger.info("Customer access attempt with: {}", contact);
+
+        // Check if email or phone has a reservation
         Optional<Reservation> reservation = reservationRepository.findFirstByEmailIgnoreCase(contact);
         if (reservation.isEmpty()) {
             reservation = reservationRepository.findFirstByPhone(contact);
         }
+
         if (reservation.isEmpty()) {
+            logger.warn("No reservation found for: {}", contact);
             return ResponseEntity.status(404).body(Map.of(
-                "error", "No booking found for this email or phone number. Please make a reservation first."
+                "error", "No booking found. Please make a reservation first."
             ));
         }
 
         Reservation res = reservation.get();
-
-        String customerName = res.getName();
-        String customerEmail = res.getEmail();
-
-        try {
-            otpService.generateAndSend(contact, customerName, customerEmail);
-        } catch (Exception e) {
-            System.err.println("OTP email failed: " + e.getMessage());
-        }
-
-        return ResponseEntity.ok(Map.of(
-            "success", true,
-            "message", "OTP sent to your booking email: " + maskEmail(customerEmail),
-            "customerName", customerName
-        ));
-    }
-
-    @PostMapping("/verify-otp")
-    public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> body) {
-        String contact = body.getOrDefault("contact", "").trim();
-        String otp = body.getOrDefault("otp", "").trim();
-
-        if (contact.isEmpty() || otp.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Contact and OTP are required"));
-        }
-
-        String customerName = otpService.getCustomerName(contact);
-        boolean valid = otpService.verify(contact, otp);
-
-        if (!valid) {
-            return ResponseEntity.status(401).body(Map.of("error", "Invalid or expired OTP. Please try again."));
-        }
-
-        Optional<Reservation> reservation = reservationRepository.findFirstByEmailIgnoreCase(contact);
-        if (reservation.isEmpty()) reservation = reservationRepository.findFirstByPhone(contact);
-
         String token = jwtUtil.generateToken("customer_" + contact);
 
-        String reservationDate = reservation.map(r -> r.getDate().toString()).orElse("");
-        String reservationTime = reservation.map(r -> r.getTime() != null ? r.getTime().toString() : "").orElse("");
+        logger.info("✅ Access granted for: {}", contact);
 
         return ResponseEntity.ok(Map.of(
             "token", token,
-            "customerName", customerName != null ? customerName : "",
+            "customerName", res.getName(),
             "contact", contact,
-            "reservationDate", reservationDate,
-            "reservationTime", reservationTime
+            "reservationDate", res.getDate().toString(),
+            "reservationTime", res.getTime() != null ? res.getTime() : "",
+            "message", "Access granted. Welcome " + res.getName() + "!"
         ));
     }
 

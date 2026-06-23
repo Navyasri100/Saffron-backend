@@ -25,11 +25,7 @@ public class DataSeeder implements CommandLineRunner {
             admin.setUsername("admin");
             admin.setPassword(passwordEncoder.encode("admin123"));
             adminRepository.save(admin);
-            System.out.println("Default admin created: admin / admin123");
+            System.out.println("✅ Default admin created");
         }
-
-        // Delete reservations from previous days
-        reservationRepository.deleteByDateBefore(LocalDate.now());
-        System.out.println("Cleared past reservations.");
     }
 }

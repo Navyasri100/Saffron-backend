@@ -16,20 +16,9 @@ public class ReservationService {
     @Autowired
     private ReservationRepository reservationRepository;
 
-    @Autowired
-    private EmailService emailService;
-
     public Reservation create(Reservation reservation) {
         Reservation saved = reservationRepository.save(reservation);
-        logger.info("Reservation created with ID: {} for email: {}", saved.getId(), saved.getEmail());
-
-        try {
-            emailService.sendReservationConfirmation(saved);
-            emailService.sendOwnerNotification(saved);
-            logger.info("Email sending initiated for reservation ID: {}", saved.getId());
-        } catch (Exception e) {
-            logger.error("Error initiating email send for reservation {}: {}", saved.getId(), e.getMessage(), e);
-        }
+        logger.info("✅ Reservation created - ID: {}, Email: {}, Date: {}", saved.getId(), saved.getEmail(), saved.getDate());
         return saved;
     }
 

@@ -9,7 +9,7 @@ import java.util.List;
 @Repository
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
     List<Reservation> findByDateOrderByTimeAsc(LocalDate date);
-    void deleteByDateBefore(LocalDate date);
+    long deleteByDateBefore(LocalDate date);
     List<Reservation> findByStatus(Reservation.ReservationStatus status);
     boolean existsByEmailIgnoreCase(String email);
     boolean existsByPhone(String phone);
