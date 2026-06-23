@@ -4,7 +4,6 @@ import com.restaurant.model.Reservation;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,21 +22,26 @@ public class EmailService {
 
     public EmailService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
-        logger.info("📧 EmailService initialized with JavaMailSender");
+        logger.info("✅ EmailService initialized with JavaMailSender");
     }
 
     @jakarta.annotation.PostConstruct
     public void init() {
-        logger.info("=== EMAIL CONFIGURATION ===");
-        logger.info("From Email: {}", fromEmail);
-        logger.info("Mail Sender: {}", mailSender != null ? "✅ Configured" : "❌ NOT configured");
-        logger.info("========================");
+        logger.info("╔════════════════════════════════════════════╗");
+        logger.info("║ 📧 EMAIL CONFIGURATION INITIALIZED 📧      ║");
+        logger.info("╠════════════════════════════════════════════╣");
+        logger.info("║ From Email: {}", String.format("%-33s║", fromEmail));
+        logger.info("║ Mail Sender: {}", String.format("%-30s║", mailSender != null ? "✅ CONFIGURED" : "❌ NOT CONFIGURED"));
+        logger.info("╚════════════════════════════════════════════╝");
     }
 
-    @Async("taskExecutor")
     public void sendReservationConfirmation(Reservation r) {
-        logger.info("[ASYNC] Starting reservation confirmation email for: {}", r.getEmail());
-        Thread.currentThread().setName("email-customer-" + r.getId());
+        logger.info("════════════════════════════════════════════");
+        logger.info("📨 SENDING RESERVATION CONFIRMATION EMAIL");
+        logger.info("════════════════════════════════════════════");
+        logger.info("To: {}", r.getEmail());
+        logger.info("Name: {}", r.getName());
+        logger.info("Reservation ID: {}", r.getId());
 
         try {
             String body =
@@ -51,15 +55,20 @@ public class EmailService {
                 "saffronsoul2024@gmail.com";
 
             send(r.getEmail(), "Reservation Confirmed — Saffron & Soul", body);
-            logger.info("[ASYNC] Reservation confirmation completed for: {}", r.getEmail());
+            logger.info("✅ RESERVATION CONFIRMATION EMAIL SENT SUCCESSFULLY");
         } catch (Exception e) {
-            logger.error("[ASYNC] Reservation confirmation failed for {}: {}", r.getEmail(), e.getMessage(), e);
+            logger.error("❌ RESERVATION CONFIRMATION EMAIL FAILED: {}", e.getMessage(), e);
         }
+        logger.info("════════════════════════════════════════════\n");
     }
 
-    @Async("taskExecutor")
     public void sendOwnerNotification(Reservation r) {
-        logger.info("[ASYNC] Starting owner notification for reservation: {}", r.getId());
+        logger.info("════════════════════════════════════════════");
+        logger.info("📨 SENDING OWNER NOTIFICATION EMAIL");
+        logger.info("════════════════════════════════════════════");
+        logger.info("To: {}", fromEmail);
+        logger.info("Customer: {}", r.getName());
+        logger.info("Reservation ID: {}", r.getId());
 
         try {
             String body =
@@ -73,15 +82,20 @@ public class EmailService {
                 "Notes: " + r.getNotes();
 
             send(fromEmail, "New Reservation - " + r.getName(), body);
-            logger.info("[ASYNC] Owner notification completed for reservation: {}", r.getId());
+            logger.info("✅ OWNER NOTIFICATION EMAIL SENT SUCCESSFULLY");
         } catch (Exception e) {
-            logger.error("[ASYNC] Owner notification failed for reservation {}: {}", r.getId(), e.getMessage(), e);
+            logger.error("❌ OWNER NOTIFICATION EMAIL FAILED: {}", e.getMessage(), e);
         }
+        logger.info("════════════════════════════════════════════\n");
     }
 
-    @Async("taskExecutor")
     public void sendOtp(String toEmail, String customerName, String otp) {
-        logger.info("[ASYNC] Starting OTP email for: {}", toEmail);
+        logger.info("════════════════════════════════════════════");
+        logger.info("📨 SENDING OTP EMAIL");
+        logger.info("════════════════════════════════════════════");
+        logger.info("To: {}", toEmail);
+        logger.info("Customer: {}", customerName);
+        logger.info("OTP: {}", otp);
 
         try {
             String body =
@@ -93,21 +107,29 @@ public class EmailService {
                 "— Team Saffron & Soul";
 
             send(toEmail, "Saffron & Soul — Your Menu Access OTP", body);
-            logger.info("[ASYNC] OTP email completed for: {}", toEmail);
+            logger.info("✅ OTP EMAIL SENT SUCCESSFULLY");
         } catch (Exception e) {
-            logger.error("[ASYNC] OTP email failed for {}: {}", toEmail, e.getMessage(), e);
+            logger.error("❌ OTP EMAIL FAILED: {}", e.getMessage(), e);
         }
+        logger.info("════════════════════════════════════════════\n");
     }
 
     private void send(String toEmail, String subject, String text) {
+        logger.info("─────────────────────────────────────────────");
+        logger.info("  Preparing to send email...");
+        logger.info("─────────────────────────────────────────────");
+
         try {
             if (fromEmail == null || fromEmail.isEmpty()) {
-                logger.error("❌ EMAIL CONFIG ERROR: spring.mail.username is not set!");
-                logger.error("❌ Emails cannot be sent without Mail Server configuration");
-                return;
+                logger.error("❌ CRITICAL: spring.mail.username is NOT configured!");
+                logger.error("❌ Set MAIL_USERNAME environment variable");
+                throw new Exception("Mail username not configured");
             }
 
-            logger.debug("Preparing email - From: {}, To: {}, Subject: {}", fromEmail, toEmail, subject);
+            logger.info("✓ From: {}", fromEmail);
+            logger.info("✓ To: {}", toEmail);
+            logger.info("✓ Subject: {}", subject);
+            logger.info("✓ Mail Sender available: YES");
 
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(FROM_NAME + " <" + fromEmail + ">");
@@ -115,17 +137,25 @@ public class EmailService {
             message.setSubject(subject);
             message.setText(text);
 
-            logger.info("🚀 Sending email to: {} | Subject: {}", toEmail, subject);
+            logger.info("🚀 ATTEMPTING TO SEND...");
             mailSender.send(message);
-            logger.info("✅ EMAIL SENT SUCCESSFULLY to: {}", toEmail);
+            logger.info("✅ SUCCESS! Email delivered to: {}", toEmail);
 
         } catch (Exception e) {
-            logger.error("❌ EMAIL SEND FAILED - To: {}, Error: {}", toEmail, e.getClass().getSimpleName());
-            logger.error("❌ Exception details: {}", e.getMessage());
+            logger.error("═══════════════════════════════════════════");
+            logger.error("❌ EMAIL SEND FAILED");
+            logger.error("═══════════════════════════════════════════");
+            logger.error("❌ Recipient: {}", toEmail);
+            logger.error("❌ Error Type: {}", e.getClass().getName());
+            logger.error("❌ Error Message: {}", e.getMessage());
+
             if (e.getCause() != null) {
-                logger.error("❌ Root cause: {}", e.getCause().getMessage());
+                logger.error("❌ Root Cause: {}", e.getCause().getClass().getName());
+                logger.error("❌ Root Message: {}", e.getCause().getMessage());
             }
-            logger.error("❌ Stack trace: ", e);
+
+            logger.error("❌ Stack Trace:", e);
+            logger.error("═══════════════════════════════════════════");
         }
     }
 }
