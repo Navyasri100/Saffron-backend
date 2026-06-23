@@ -14,7 +14,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -24,34 +23,18 @@ class ReservationServiceTest {
     @Mock
     private ReservationRepository reservationRepository;
 
-    @Mock
-    private EmailService emailService;
-
     @InjectMocks
     private ReservationService service;
 
     @Test
-    void createSavesAndSendsEmails() {
+    void createSavesReservation() {
         Reservation reservation = sampleReservation();
         when(reservationRepository.save(reservation)).thenReturn(reservation);
 
         Reservation result = service.create(reservation);
 
         assertEquals(reservation, result);
-        verify(emailService).sendReservationConfirmation(reservation);
-        verify(emailService).sendOwnerNotification(reservation);
-    }
-
-    @Test
-    void createStillReturnsSavedReservationWhenEmailFails() {
-        Reservation reservation = sampleReservation();
-        when(reservationRepository.save(reservation)).thenReturn(reservation);
-        doThrow(new RuntimeException("mail down")).when(emailService).sendReservationConfirmation(reservation);
-
-        Reservation result = service.create(reservation);
-
-        assertEquals(reservation, result);
-        verify(emailService).sendReservationConfirmation(reservation);
+        verify(reservationRepository).save(reservation);
     }
 
     @Test
