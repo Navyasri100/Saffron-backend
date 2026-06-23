@@ -2,22 +2,23 @@ package com.restaurant.service;
 
 import com.restaurant.model.Reservation;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-import java.util.List;
-import java.util.Map;
 
 @Service
 public class EmailService {
 
-    @Value("${brevo.api-key}")
-    private String apiKey;
+    private final JavaMailSender mailSender;
 
-    private final RestTemplate restTemplate = new RestTemplate();
-    private static final String BREVO_URL = "https://api.brevo.com/v3/smtp/email";
-    private static final String FROM_EMAIL = "saffronsoul2024@gmail.com";
+    @Value("${spring.mail.username}")
+    private String fromEmail;
+
     private static final String FROM_NAME = "Saffron & Soul";
+
+    public EmailService(JavaMailSender mailSender) {
+        this.mailSender = mailSender;
+    }
 
     public void sendReservationConfirmation(Reservation r) {
         String body =
@@ -30,7 +31,7 @@ public class EmailService {
             "— Team Saffron & Soul\n" +
             "saffronsoul2024@gmail.com";
 
-        send(r.getEmail(), r.getName(), "Reservation Confirmed — Saffron & Soul", body);
+        send(r.getEmail(), "Reservation Confirmed — Saffron & Soul", body);
     }
 
     public void sendOwnerNotification(Reservation r) {
@@ -44,7 +45,7 @@ public class EmailService {
             "Guests: " + r.getGuests() + "\n" +
             "Notes: " + r.getNotes();
 
-        send("saffronsoul2024@gmail.com", "Owner", "New Reservation - " + r.getName(), body);
+        send(fromEmail, "New Reservation - " + r.getName(), body);
     }
 
     public void sendOtp(String toEmail, String customerName, String otp) {
@@ -55,28 +56,20 @@ public class EmailService {
             "This OTP is valid for 10 minutes.\n\n" +
             "Enjoy your dining experience!\n" +
             "— Team Saffron & Soul";
-        send(toEmail, customerName, "Saffron & Soul — Your Menu Access OTP", body);
+
+        send(toEmail, "Saffron & Soul — Your Menu Access OTP", body);
     }
 
-    private void send(String toEmail, String toName, String subject, String text) {
-        System.out.println("Brevo send to: " + toEmail + " | key starts with: " + (apiKey != null ? apiKey.substring(0, Math.min(10, apiKey.length())) : "NULL"));
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("api-key", apiKey);
-
-        Map<String, Object> payload = Map.of(
-            "sender", Map.of("name", FROM_NAME, "email", FROM_EMAIL),
-            "to", List.of(Map.of("email", toEmail, "name", toName)),
-            "subject", subject,
-            "textContent", text
-        );
-
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
+    private void send(String toEmail, String subject, String text) {
         try {
-            ResponseEntity<String> response = restTemplate.postForEntity(BREVO_URL, request, String.class);
-            System.out.println("Brevo response: " + response.getStatusCode() + " | " + response.getBody());
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(FROM_NAME + " <" + fromEmail + ">");
+            message.setTo(toEmail);
+            message.setSubject(subject);
+            message.setText(text);
+            mailSender.send(message);
         } catch (Exception e) {
-            System.err.println("Brevo error: " + e.getMessage());
+            System.err.println("Email send failed to " + toEmail + ": " + e.getMessage());
         }
     }
 }
