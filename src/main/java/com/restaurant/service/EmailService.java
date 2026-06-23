@@ -23,57 +23,91 @@ public class EmailService {
 
     public EmailService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
+        logger.info("📧 EmailService initialized with JavaMailSender");
     }
 
-    @Async
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        logger.info("=== EMAIL CONFIGURATION ===");
+        logger.info("From Email: {}", fromEmail);
+        logger.info("Mail Sender: {}", mailSender != null ? "✅ Configured" : "❌ NOT configured");
+        logger.info("========================");
+    }
+
+    @Async("taskExecutor")
     public void sendReservationConfirmation(Reservation r) {
-        String body =
-            "Dear " + r.getName() + ",\n\n" +
-            "Your reservation at Saffron & Soul has been confirmed!\n\n" +
-            "Date: " + r.getDate() + "\n" +
-            "Time: " + r.getTime() + "\n" +
-            "Guests: " + r.getGuests() + "\n\n" +
-            "We look forward to welcoming you.\n\n" +
-            "— Team Saffron & Soul\n" +
-            "saffronsoul2024@gmail.com";
+        logger.info("[ASYNC] Starting reservation confirmation email for: {}", r.getEmail());
+        Thread.currentThread().setName("email-customer-" + r.getId());
 
-        send(r.getEmail(), "Reservation Confirmed — Saffron & Soul", body);
+        try {
+            String body =
+                "Dear " + r.getName() + ",\n\n" +
+                "Your reservation at Saffron & Soul has been confirmed!\n\n" +
+                "Date: " + r.getDate() + "\n" +
+                "Time: " + r.getTime() + "\n" +
+                "Guests: " + r.getGuests() + "\n\n" +
+                "We look forward to welcoming you.\n\n" +
+                "— Team Saffron & Soul\n" +
+                "saffronsoul2024@gmail.com";
+
+            send(r.getEmail(), "Reservation Confirmed — Saffron & Soul", body);
+            logger.info("[ASYNC] Reservation confirmation completed for: {}", r.getEmail());
+        } catch (Exception e) {
+            logger.error("[ASYNC] Reservation confirmation failed for {}: {}", r.getEmail(), e.getMessage(), e);
+        }
     }
 
-    @Async
+    @Async("taskExecutor")
     public void sendOwnerNotification(Reservation r) {
-        String body =
-            "New reservation received:\n\n" +
-            "Name: " + r.getName() + "\n" +
-            "Email: " + r.getEmail() + "\n" +
-            "Phone: " + r.getPhone() + "\n" +
-            "Date: " + r.getDate() + "\n" +
-            "Time: " + r.getTime() + "\n" +
-            "Guests: " + r.getGuests() + "\n" +
-            "Notes: " + r.getNotes();
+        logger.info("[ASYNC] Starting owner notification for reservation: {}", r.getId());
 
-        send(fromEmail, "New Reservation - " + r.getName(), body);
+        try {
+            String body =
+                "New reservation received:\n\n" +
+                "Name: " + r.getName() + "\n" +
+                "Email: " + r.getEmail() + "\n" +
+                "Phone: " + r.getPhone() + "\n" +
+                "Date: " + r.getDate() + "\n" +
+                "Time: " + r.getTime() + "\n" +
+                "Guests: " + r.getGuests() + "\n" +
+                "Notes: " + r.getNotes();
+
+            send(fromEmail, "New Reservation - " + r.getName(), body);
+            logger.info("[ASYNC] Owner notification completed for reservation: {}", r.getId());
+        } catch (Exception e) {
+            logger.error("[ASYNC] Owner notification failed for reservation {}: {}", r.getId(), e.getMessage(), e);
+        }
     }
 
-    @Async
+    @Async("taskExecutor")
     public void sendOtp(String toEmail, String customerName, String otp) {
-        String body =
-            "Dear " + customerName + ",\n\n" +
-            "Your One-Time Password to access the Saffron & Soul menu is:\n\n" +
-            "        " + otp + "\n\n" +
-            "This OTP is valid for 10 minutes.\n\n" +
-            "Enjoy your dining experience!\n" +
-            "— Team Saffron & Soul";
+        logger.info("[ASYNC] Starting OTP email for: {}", toEmail);
 
-        send(toEmail, "Saffron & Soul — Your Menu Access OTP", body);
+        try {
+            String body =
+                "Dear " + customerName + ",\n\n" +
+                "Your One-Time Password to access the Saffron & Soul menu is:\n\n" +
+                "        " + otp + "\n\n" +
+                "This OTP is valid for 10 minutes.\n\n" +
+                "Enjoy your dining experience!\n" +
+                "— Team Saffron & Soul";
+
+            send(toEmail, "Saffron & Soul — Your Menu Access OTP", body);
+            logger.info("[ASYNC] OTP email completed for: {}", toEmail);
+        } catch (Exception e) {
+            logger.error("[ASYNC] OTP email failed for {}: {}", toEmail, e.getMessage(), e);
+        }
     }
 
     private void send(String toEmail, String subject, String text) {
         try {
             if (fromEmail == null || fromEmail.isEmpty()) {
-                logger.error("Email configuration missing: spring.mail.username not set");
+                logger.error("❌ EMAIL CONFIG ERROR: spring.mail.username is not set!");
+                logger.error("❌ Emails cannot be sent without Mail Server configuration");
                 return;
             }
+
+            logger.debug("Preparing email - From: {}, To: {}, Subject: {}", fromEmail, toEmail, subject);
 
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(FROM_NAME + " <" + fromEmail + ">");
@@ -81,11 +115,17 @@ public class EmailService {
             message.setSubject(subject);
             message.setText(text);
 
-            logger.info("Sending email to: {} with subject: {}", toEmail, subject);
+            logger.info("🚀 Sending email to: {} | Subject: {}", toEmail, subject);
             mailSender.send(message);
-            logger.info("Email sent successfully to: {}", toEmail);
+            logger.info("✅ EMAIL SENT SUCCESSFULLY to: {}", toEmail);
+
         } catch (Exception e) {
-            logger.error("Failed to send email to {}: {}", toEmail, e.getMessage(), e);
+            logger.error("❌ EMAIL SEND FAILED - To: {}, Error: {}", toEmail, e.getClass().getSimpleName());
+            logger.error("❌ Exception details: {}", e.getMessage());
+            if (e.getCause() != null) {
+                logger.error("❌ Root cause: {}", e.getCause().getMessage());
+            }
+            logger.error("❌ Stack trace: ", e);
         }
     }
 }
