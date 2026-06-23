@@ -59,6 +59,7 @@ public class EmailService {
     }
 
     private void send(String toEmail, String toName, String subject, String text) {
+        System.out.println("Brevo send to: " + toEmail + " | key starts with: " + (apiKey != null ? apiKey.substring(0, Math.min(10, apiKey.length())) : "NULL"));
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("api-key", apiKey);
@@ -71,6 +72,11 @@ public class EmailService {
         );
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
-        restTemplate.postForEntity(BREVO_URL, request, String.class);
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(BREVO_URL, request, String.class);
+            System.out.println("Brevo response: " + response.getStatusCode() + " | " + response.getBody());
+        } catch (Exception e) {
+            System.err.println("Brevo error: " + e.getMessage());
+        }
     }
 }
