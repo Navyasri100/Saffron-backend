@@ -103,8 +103,8 @@ class ReservationControllerTest {
     @Test
     void getMyReservationReturnsNotFoundWhenNoReservationForContact() {
         mockCustomerToken("abc@mail.com");
-        when(reservationRepository.findFirstByEmailIgnoreCase("abc@mail.com")).thenReturn(Optional.empty());
-        when(reservationRepository.findFirstByPhone("abc@mail.com")).thenReturn(Optional.empty());
+        when(reservationRepository.findLatestByEmailIgnoreCase("abc@mail.com")).thenReturn(Optional.empty());
+        when(reservationRepository.findLatestByPhone("abc@mail.com")).thenReturn(Optional.empty());
 
         ResponseEntity<?> response = controller.getMyReservation("Bearer token");
 
@@ -115,7 +115,7 @@ class ReservationControllerTest {
     void getMyReservationReturnsReservationWhenFound() {
         Reservation reservation = reservation("abc@mail.com", "111", LocalDate.now().plusDays(3), "8:00 PM", 3, Reservation.ReservationStatus.CONFIRMED);
         mockCustomerToken("abc@mail.com");
-        when(reservationRepository.findFirstByEmailIgnoreCase("abc@mail.com")).thenReturn(Optional.of(reservation));
+        when(reservationRepository.findLatestByEmailIgnoreCase("abc@mail.com")).thenReturn(Optional.of(reservation));
 
         ResponseEntity<?> response = controller.getMyReservation("Bearer token");
 

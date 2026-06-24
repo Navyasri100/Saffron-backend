@@ -91,8 +91,8 @@ public class ReservationController {
     }
 
     private Optional<Reservation> findByContact(String contact) {
-        Optional<Reservation> r = reservationRepository.findFirstByEmailIgnoreCase(contact);
-        return r.isPresent() ? r : reservationRepository.findFirstByPhone(contact);
+        Optional<Reservation> r = reservationRepository.findLatestByEmailIgnoreCase(contact);
+        return r.isPresent() ? r : reservationRepository.findLatestByPhone(contact);
     }
 
     // GET /api/reservations/mine

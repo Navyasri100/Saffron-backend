@@ -38,8 +38,8 @@ class CustomerAuthControllerTest {
 
     @Test
     void verifyAccessReturnsNotFoundWhenNoReservationExists() {
-        when(reservationRepository.findFirstByEmailIgnoreCase("none@example.com")).thenReturn(Optional.empty());
-        when(reservationRepository.findFirstByPhone("none@example.com")).thenReturn(Optional.empty());
+        when(reservationRepository.findLatestByEmailIgnoreCase("none@example.com")).thenReturn(Optional.empty());
+        when(reservationRepository.findLatestByPhone("none@example.com")).thenReturn(Optional.empty());
 
         ResponseEntity<?> response = controller.verifyAccess(Map.of("contact", "none@example.com"));
 
@@ -49,7 +49,7 @@ class CustomerAuthControllerTest {
     @Test
     void verifyAccessReturnsTokenWhenReservationFound() {
         Reservation reservation = reservation("Navya", "navya@gmail.com", "9999999999");
-        when(reservationRepository.findFirstByEmailIgnoreCase("navya@gmail.com")).thenReturn(Optional.of(reservation));
+        when(reservationRepository.findLatestByEmailIgnoreCase("navya@gmail.com")).thenReturn(Optional.of(reservation));
         when(jwtUtil.generateToken("customer_navya@gmail.com")).thenReturn("test-token");
 
         ResponseEntity<?> response = controller.verifyAccess(Map.of("contact", "navya@gmail.com"));
