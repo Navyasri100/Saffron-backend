@@ -30,10 +30,10 @@ public class CustomerAuthController {
 
         logger.info("Customer access attempt with: {}", contact);
 
-        // Check if email or phone has a reservation
-        Optional<Reservation> reservation = reservationRepository.findFirstByEmailIgnoreCase(contact);
+        // Find LATEST reservation by email or phone
+        Optional<Reservation> reservation = reservationRepository.findLatestByEmailIgnoreCase(contact);
         if (reservation.isEmpty()) {
-            reservation = reservationRepository.findFirstByPhone(contact);
+            reservation = reservationRepository.findLatestByPhone(contact);
         }
 
         if (reservation.isEmpty()) {
@@ -44,6 +44,16 @@ public class CustomerAuthController {
         }
 
         Reservation res = reservation.get();
+
+        // Check if reservation date has passed
+        java.time.LocalDate today = java.time.LocalDate.now();
+        if (today.isAfter(res.getDate())) {
+            logger.warn("Reservation expired for: {} (reservation date: {})", contact, res.getDate());
+            return ResponseEntity.status(410).body(Map.of(
+                "error", "Your reservation date has passed. Please make a new reservation."
+            ));
+        }
+
         String token = jwtUtil.generateToken("customer_" + contact);
 
         logger.info("✅ Access granted for: {}", contact);
